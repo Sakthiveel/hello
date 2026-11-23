@@ -10,7 +10,7 @@ struct termios orig_termios;
   struct GameMechanics
     {
         int gameCells[4][4];
-        int rowsCount;
+        int rowsCount; // these needs to be const, immutable once initialized.s
         int columnsCount;
     };
 
@@ -48,6 +48,8 @@ void showGameCells (struct GameMechanics gameMechanics) {
         printf("\n");
     }
 }
+ 
+
 
 int main() {
     enableRawMode();
@@ -69,30 +71,50 @@ int main() {
         .column = 2
     };
 
-    gameMechanics[position.row][position.column] = 1; // why the fuck this is not working
+    gameMechanics.gameCells[position.row - 1][position.column - 1] = 1; // why the fuck this is not working
 
-    showGameCells(gameMechanics);
-    return 1;
+    // showGameCells(gameMechanics);
+  
   
     while (1) {
         // 3. Check if a key was pressed (returns 1 if a byte was read)
         if (read(STDIN_FILENO, &ch, 1) == 1) {
-            if (ch == 'q') break;          // Quit game
-            if (ch == 'a' && x > 0) x--;   // Move left
-            if (ch == 'd' && x < 30) x++;  // Move right
+            if (ch == 'q') break;// Quit game
+            if (ch == 'w') {
+                if (position.row > 1) {
+                    gameMechanics.gameCells[position.row -1][position.column -1] = 0;
+                    gameMechanics.gameCells[position.row - 2][position.column -1] = 1;
+                    position.row--;
+                }
+            }
+            if (ch == 's') {
+                if (position.row < gameMechanics.rowsCount) {
+                    gameMechanics.gameCells[position.row - 1][position.column - 1] = 0;
+                    gameMechanics.gameCells[position.row][position.column -1] = 1;
+                    position.row++;
+                }
+            }
+            if (ch == 'a') {
+                if (position.column > 1) {
+                    gameMechanics.gameCells[position.row - 1][position.column - 1] = 0;
+                    gameMechanics.gameCells[position.row - 1][position.column - 2] = 1;
+                    position.column--;
+                }
+            }    // Move left
+            if (ch == 'd') {
+                if (position.column < gameMechanics.columnsCount) {
+                    gameMechanics.gameCells[position.row - 1][position.column - 1] = 0;
+                    gameMechanics.gameCells[position.row - 1][position.column] = 1;
+                    position.column++;
+                }
+            }  // Move right
 
 
         }
         printf("\033[2J");
         // 4. Draw the game frame
-       // printf("\r");                      // Jump back to start of the line
-        for(int i=0;i<3;i++) {
-            printf("\nd"); 
-            for (int i = 0; i < 50; i++) {
-            if (i == x) printf("@");       // Draw player
-            else printf(".");              // Draw empty track
-        }
-        }
+        showGameCells(gameMechanics);
+       
         fflush(stdout);                    // Force terminal to draw immediately
 
         usleep(50000);                     // Sleep 50ms (~20 FPS) so CPU doesn't max out
